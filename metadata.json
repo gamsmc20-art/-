@@ -1,0 +1,8 @@
+{
+  "name": "ระบบรับจำนำโทรศัพท์มือถือ",
+  "description": "ระบบรับจำนำโทรศัพท์มือถือ แดชบอร์ดสรุปยอดรายวัน คำนวณดอกเบี้ยอัตโนมัติ แจ้งเตือนสินค้าหลุดจำนำ พิมพ์ใบสัญญาความร้อน และสำรองข้อมูล Google Sheets",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
