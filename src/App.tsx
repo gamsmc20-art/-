@@ -76,8 +76,41 @@ export default function App() {
     return initialCustomers;
   });
 
-  const [branches] = useState<Branch[]>(initialBranches);
-  const [currentUser, setCurrentUser] = useState<SystemUser>(initialUsers[0]);
+  const [branches, setBranches] = useState<Branch[]>(() => {
+    const saved = localStorage.getItem('mobile_pawn_branches');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return initialBranches;
+  });
+
+  const [users, setUsers] = useState<SystemUser[]>(() => {
+    const saved = localStorage.getItem('mobile_pawn_users');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return initialUsers;
+  });
+
+  const [currentUser, setCurrentUser] = useState<SystemUser>(() => {
+    const saved = localStorage.getItem('mobile_pawn_current_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return initialUsers[0];
+  });
   const [selectedBranchId, setSelectedBranchId] = useState<string>('all');
   const [lineSettings, setLineSettings] = useState<LineNotifySettings>(initialLineSettings);
 
@@ -104,6 +137,61 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('mobile_pawn_customers', JSON.stringify(customers));
   }, [customers]);
+
+  // Persist branches & users
+  useEffect(() => {
+    localStorage.setItem('mobile_pawn_branches', JSON.stringify(branches));
+  }, [branches]);
+
+  useEffect(() => {
+    localStorage.setItem('mobile_pawn_users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('mobile_pawn_current_user', JSON.stringify(currentUser));
+  }, [currentUser]);
+
+  // User & Branch update handlers
+  const handleUpdateUser = (updatedUser: SystemUser) => {
+    setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+    if (currentUser.id === updatedUser.id) {
+      setCurrentUser(updatedUser);
+    }
+  };
+
+  const handleAddUser = (newUser: SystemUser) => {
+    setUsers((prev) => [...prev, newUser]);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    if (currentUser.id === userId) {
+      const remaining = users.filter((u) => u.id !== userId);
+      if (remaining.length > 0) {
+        setCurrentUser(remaining[0]);
+      }
+    }
+  };
+
+  const handleUpdateBranch = (updatedBranch: Branch) => {
+    setBranches((prev) => prev.map((b) => (b.id === updatedBranch.id ? updatedBranch : b)));
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.branchId === updatedBranch.id ? { ...u, branchName: updatedBranch.name } : u
+      )
+    );
+    if (currentUser.branchId === updatedBranch.id) {
+      setCurrentUser((prev) => ({ ...prev, branchName: updatedBranch.name }));
+    }
+  };
+
+  const handleAddBranch = (newBranch: Branch) => {
+    setBranches((prev) => [...prev, newBranch]);
+  };
+
+  const handleDeleteBranch = (branchId: string) => {
+    setBranches((prev) => prev.filter((b) => b.id !== branchId));
+  };
 
   // Badge counts
   const activeCount = contracts.filter(
@@ -352,6 +440,7 @@ export default function App() {
                 type="button"
                 onClick={() => setUserRoleOpen(true)}
                 className="flex items-center space-x-2 pl-2 pr-3 py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors text-left"
+                title="คลิกเพื่อแก้ไขชื่อเจ้าของร้าน พนักงาน และข้อมูลสาขา"
               >
                 <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
                   {currentUser.name.charAt(0)}
@@ -596,11 +685,18 @@ export default function App() {
       {userRoleOpen && (
         <UserRoleModal
           currentUser={currentUser}
-          allUsers={initialUsers}
+          allUsers={users}
+          branches={branches}
           onSelectUser={(u) => {
             setCurrentUser(u);
             setUserRoleOpen(false);
           }}
+          onUpdateUser={handleUpdateUser}
+          onAddUser={handleAddUser}
+          onDeleteUser={handleDeleteUser}
+          onUpdateBranch={handleUpdateBranch}
+          onAddBranch={handleAddBranch}
+          onDeleteBranch={handleDeleteBranch}
           onClose={() => setUserRoleOpen(false)}
         />
       )}
